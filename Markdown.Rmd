@@ -10,10 +10,10 @@ output:
 #### problem
 Most of us have been there before. We are on the way to the airport for a vacation, business trip or a long weekend out of town and *it* happens. A text appears on your phone. It is from a strangely formatted number and obviously written by a bot. Upon realizing this you know all too well what has happened: **your flight has just been delayed.** This is NOT the way you wanted to start your trip. 
 
-*Is it possible that this could have been avoided?* I believe that there is and I want to explore if there is a way to predict which flights, in terms of departure time and/or city should be avoided to reduce the likelihood of delay. 
+*Is it possible that this could have been avoided?* I believe that there is and I want to explore if there is a way to predict which flights, in terms of departure time and/or city should be avoided to reduce the likelihood of a flight delay. 
 
 #### client
-These days, flight delays seem to be unavoidable. Flight delays cost business travelers millions of dollars each year in added travel costs, lost revenue and missed opportunities. **If there was a way business travelers could predict which flights to avoid, they could save themselves time, money and stress.**
+These days, flight delays seem to be unavoidable. Flight delays cost business travelers millions of dollars each year in added travel costs, lost revenue and missed opportunities. **If there was a way for business travelers could predict which flights to avoid, they could save themselves time, money and stress.** They could select higher performing flights and better connection cities.
 
 #### data
 The data used for this project will be from the Kaggle website. It is sourced from the Department of Transportation and contains two years worth of data. The data will need to be formatted and joined to airport data and airline data. 
@@ -21,7 +21,7 @@ The data used for this project will be from the Kaggle website. It is sourced fr
 [link to data](https://www.kaggle.com/usdot/flight-delays#flights.csv)
 
 #### approach
-For this study, I will be focusing on which the time of day the delay occurred and at which airport/region the delay occurred. I think it will be necessary to group these two together due to environmental issues affect specific airports (e.g. afternoon thunderstorms in Miami). Time of year will also likely need to be considered to account for weather that only occurs during certain times of the year. In addition to the apparent challenges that weather can pose, I want to see if avoiding certain flight times can improve one's chance of avoiding a flight delay. After I have completed my modeling for one year of data, I am hoping that delays will be predicted in the second year of data. 
+For this study, I will be focusing on which time of day the delay occurred and at which airport/region the delay occurred. I think it will be necessary to consider these two variables together due to environmental issues affect specific airports (e.g. afternoon thunderstorms in Miami). Time of year will also likely need to be considered to account for weather that only occurs during certain times of the year. In addition to the apparent challenges that weather can pose, I want to see if avoiding certain flight times can improve one's chance of avoiding a flight delay, despite the time of year. After I have completed my modeling for one year of data, I am hoping that delays will be predicted in the second year of data. 
 
 #### deliverables
 * slide deck outlining my findings
