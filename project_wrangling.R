@@ -18,13 +18,13 @@ nrow(flight_data) #5,819,079 rows
 sapply(flight_data, function(x) sum(is.na (x))) #86,153 records
 
 #2 purging null values for Departure Delay as these won't help in analysis
-flight_data_2 <- flight_data %>% 
+flight_data <- flight_data %>% 
   filter(!is.na(flight_data$DEPARTURE_DELAY))
 
 #checking row numbers 
-nrow(flight_data_2) #5,732,926 (==5819079 original - 86153 NULL in Dep Delay)
+nrow(flight_data) #5,732,926 (==5819079 original - 86153 NULL in Dep Delay)
 
-colnames(flight_data_2)
+colnames(flight_data)
 
 #converting cancel cols to a table to be used for lu
 vec1 <- c("A","B","C","D")
@@ -37,29 +37,25 @@ mat <- as.data.frame(mat)
 colnames(mat) <- c("CANCELLATION_REASON","can_value")
 mat
 
-flight_data_3 <- left_join(flight_data_2, mat, by = "CANCELLATION_REASON")
-unique(flight_data_3$can_value)
+flight_data <- left_join(flight_data, mat, by = "CANCELLATION_REASON")
 
 #reading in airline data
 airline_data <- read_csv(airlines_path)
 airline_data
 
 #changing column name in flight data to match that in airlines data
-colnames(flight_data_3)[colnames(flight_data_3) =="AIRLINE"] <- 'IATA_CODE'
+colnames(flight_data)[colnames(flight_data) =="AIRLINE"] <- 'IATA_CODE'
 
 #connecting flight data to airline data
-flight_data_4 <- inner_join(flight_data_3, airline_data, by = "IATA_CODE")
-nrow(flight_data_4)
-
-#copying flight data
-flight_data_5 <- flight_data_4
-nrow(flight_data_5)
+flight_data <- inner_join(flight_data, airline_data, by = "IATA_CODE")
+nrow(flight_data)
 
 
 #Setting a boolean that there was a delay or NOT
-delay_vec <- flight_data_5$ARRIVAL_DELAY > 0
+delay_vec <- flight_data$ARRIVAL_DELAY > 0
 
-bind_cols(flight_data_5,delay_vec)
+
+bind_cols(flight_data,delay_vec)
 
 length(flight_data_5)
 for (num in 1:length(flight_delay_4)){
