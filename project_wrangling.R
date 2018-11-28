@@ -58,11 +58,5 @@ delay_vec <- flight_data$ARRIVAL_DELAY > 0
 flight_data$BOOL_DELAY <- delay_vec
 colnames(flight_data)
 nrow(flight_data)
-#prob here
-for (num in 1:nrow(flight_data)){
-  if (flight_data$BOOL_DELAY[num]==TRUE){flight_data[num]=1}
-  else{flight_data$BOOL_DELAY[num]=0}
-}
-flight_data$BOOL_DELAY[5732900]
-nrow(flight_data)
-unique(flight_data$BOOL_DELAY)
+
+
