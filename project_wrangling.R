@@ -59,4 +59,5 @@ flight_data$BOOL_DELAY <- delay_vec
 colnames(flight_data)
 nrow(flight_data)
 
-
+flight_data$BOOL_DELAY <- as.numeric(flight_data$BOOL_DELAY)
+View(flight_data[1:10,])
