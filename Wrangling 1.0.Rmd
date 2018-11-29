@@ -1,0 +1,28 @@
+---
+title: "Untitled"
+author: "Ben Kean"
+date: "11/28/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+There were three files included in the data set:
+1) flights.csv data - contains the flight details
+2) airlines.csv - contains the airline name
+3) airports.csv - contains the airport name
+
+[link to data](https://www.kaggle.com/usdot/flight-delays#flights.csv)  
+
+###Major Steps (Thus far)  
+
+1) Checking for null values in important columns. I determined that flight dealy, which holds the total delay for the flight, was important and cannot be NULL. Therefore, I removed the records when this was NULL.
+
+2) The cancellation reason was a numerical value. I used the values given in the data description and a lookup table I created to add a column for the cacellation value.
+
+3) I joined the main dataframe to the airlines table to get the value of the airline.
+
+4) I added a Boolean column (1/0) to determine if a delay had occured.
+
+5) Next Step - More to be determined after discussion..
