@@ -60,4 +60,8 @@ colnames(flight_data)
 nrow(flight_data)
 
 flight_data$BOOL_DELAY <- as.numeric(flight_data$BOOL_DELAY)
-View(flight_data[1:10,])
+View(flight_data[1000:1999,])
+
+
+#write file to local
+write.csv(flight_data[1:100,], file = "flight_sample_clean.csv")
