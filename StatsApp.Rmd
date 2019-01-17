@@ -1,0 +1,52 @@
+---
+title: "Stats Application"
+author: "Ben Kean"
+date: "01/15/2019"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+##Application of Statistics 
+####Summary Statistics
+Below are summary statistics of the data when a delay occured. If a delay did not occur on a flight, then it was not included in the summary below. Below the summary statistics is a histogram showing  the distribution of the delay times. Clearly, I am dealing with a left-skewed data distribution.
+<br>
+<br>   Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+<br>   1.00    6.00   15.00   33.12   39.00 1636.00 
+<br>
+
+![Delay by flight hour](/Users/rhino/project_proposal/hist.png)
+
+####Probability of having a delay
+The first data point I wanted to look at was percentage of flights that are late (delayed) upon arrival. Initially, I thought this would be 10-15%. However, according the data that I looked at, around 37.4% of flights are delayed - over 150% higher than I expected! A slightly higher number of flights were delayed for Departure. Departing flights were delayed around 39% of the time for the sample I looked at.
+
+At a rate of 37.4%, a person would have the following expected chances of having a delay:<br>
+P(delay given n number of flights) = 1-(1-0.374)^5
+1 flights - 37.4%<br>
+2 flights - 60.8%<br>
+3 flights - 75.5%<br>
+4 flights - 84.6%<br>
+5 flights - 90.4%<br>
+
+<br>
+
+####Probability of delay given an event
+The next data point I looked at was determining the probability of an arrival delay given that a departure delay occured.<br>
+P(arrival delay|departure delay)<br>
+The results were not suprising. When there was a delay on the departure end of flight, there was likely a delay on the arrival side. The probability of a delay on arrival give there was a delay on departure was observed was 71.1%. Where there was not a delay on departure, you were only expected to be delayed 16.3% of the time. This expected outcome seemed obvious, but I wanted to review it because it might be a good indicator to use in a regression model.
+
+<br>
+
+####Probability of delay given hour of departure
+This statistic is the one of the main themes of my analysis. I expected that the results for the morning would show a lower probability of delay. My expectations generally follow what was shown in the data. The results show that early morning hours, that is 4 or 5 AM, show a lower expected probablity of delay (~25%) than later in the day and those hours after midnight (+40%). Due to the difference in time vs. how humans, and subsequently airlines, structure their day, I plan to create some extra elements for future analysis (morning, midday, evening, overnight). I believe this makes more sense and this is how major travel sellers present their products. Additionally, flights after midnight made up less than 1% of the data so it may make sense to eliminate them.
+
+![Delay by flight hour](/Users/rhino/project_proposal/hour.png)
+
+####Size of Airport
+I wanted to see if the size of an airport was correlated to the probablility of a delay. I expected busier airports would have more delays. However, initial results do not support this idea. It seems that regardless of size, most of the larger airports seems to hover in the 37% range according to the graph.
+
+![Airport size](/Users/rhino/project_proposal/size.png)
