@@ -3,6 +3,7 @@ library(readr)
 library(tidyr)
 library(dplyr)
 library(readxl)
+library(ggplot2)
 
 #setting local paths
 flight_path <- "/Users/rhino/downloads/flights.csv"
@@ -17,9 +18,13 @@ nrow(flight_data) #5,819,079 rows
 #checking for null values. Null values in the Deparature Delay column exist in 
 sapply(flight_data, function(x) sum(is.na (x))) #86,153 records
 
-#2 purging null values for Departure Delay as these won't help in analysis
+#2a purging null values for Departure Delay as these won't help in analysis
 flight_data <- flight_data %>% 
   filter(!is.na(flight_data$DEPARTURE_DELAY))
+
+#2b purging null values for Arrival Delay as these won't help in analysis
+flight_data <- flight_data %>% 
+  filter(!is.na(flight_data$ARRIVAL_DELAY))
 
 #checking row numbers 
 nrow(flight_data) #5,732,926 (==5819079 original - 86153 NULL in Dep Delay)
@@ -52,10 +57,13 @@ nrow(flight_data)
 
 
 #Setting a boolean that there was a delay or NOT
-delay_vec <- flight_data$ARRIVAL_DELAY > 0
+delay_vec_depart <- flight_data$DEPARTURE_DELAY >0
+delay_vec_arrival <- flight_data$ARRIVAL_DELAY > 0
+sum(delay_vec_arrival)
+sum(delay_vec_depart)
 
-
-flight_data$BOOL_DELAY <- delay_vec
+flight_data$DEPART_DELAY_BOOL <- delay_vec_depart
+flight_data$ARRIVAL_DELAY_BOOL <- delay_vec_arrival
 colnames(flight_data)
 nrow(flight_data)
 
@@ -65,3 +73,11 @@ View(flight_data[1000:1999,])
 
 #write file to local
 write.csv(flight_data[1:100,], file = "flight_sample_clean.csv")
+
+#sets delays as the arrival delay 
+delays <- flight_data %>% 
+  filter(ARRIVAL_DELAY_BOOL==1)
+#counts the delays per airline
+delays %>% 
+group_by(AIRLINE) %>% 
+  summarise(n = n())
