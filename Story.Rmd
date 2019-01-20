@@ -1,22 +1,36 @@
 ---
 title: "Story"
 author: "Ben Kean"
-date: "1/16/2019"
+date: "1/19/2019"
 output: html_document
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
-##Additional Wrangling
-Even though the data had gone through one round of cleaing, the data was not as clean as I initially thought. There were some data points that were not identified as being invalid. These had to be corrected in order to produce valid results. 
+#### **problem**
+Most of us have been there before. We are on the way to the airport for a vacation, business trip or a long weekend out of town and *it* happens. A text appears on your phone. It is from a strangely formatted number and obviously written by a bot. Upon realizing this you know all too well what has happened: **your flight has just been delayed.** This is NOT the way you wanted to start your trip. 
 
+*Is it possible that this could have been avoided?* I believe that there is and I want to explore if there is a way to predict which flights, in terms of departure time and/or city should be avoided to reduce the likelihood of a flight delay. 
+<hr>
+#### **client**
+These days, flight delays seem to be unavoidable. Flight delays cost business travelers millions of dollars each year in added travel costs, lost revenue and missed opportunities. **If there was a way for business travelers could predict which flights to avoid, they could save themselves time, money and stress.** They could select higher performing flights and better connection cities.
+<hr>
+#### **data**
+The data used for this project is from the Kaggle website. It was sourced from the Department of Transportation and contains one year of data (2015). 
+
+[link to data](https://www.kaggle.com/usdot/flight-delays#flights.csv)
+<hr>
+##Wrangling
+Overall, the date was quite clean and did not require structural wrangling. The data was already in a tidy format - each row was a seperate instance and there were no aggregated columns. However, the data did have several issues that required attention such as invalid values, nulls, etc. Also, to complete the analysis, I was required to add some features to make the data more usable.
+<hr>
 ####Invalid Airport Codes
-The first item needed to be addressed was the invalid airport codes. About 1.5% of the data had airport codes that were not listed in the airport file. Instead of valid 3-byte airport codes, there were a string of numbers. These were eliminated by applying a semi join. Those numeric airport codes that were not in the airport table were eliminated.
+About 1.5% of the data had airport codes that were not listed in the airport file. Instead of valid 3-byte airport codes, there was a string of numbers populated in either the origin airport, the departure airport, or both. These were eliminated by applying a semi join. Those numeric airport codes that were not in the airport table were eliminated.
+<br> **flight_data <- semi_join(flight_data, airport)**
 
 
 ####Null Values
-The second piece of wrangling that need to be applied was the elimination of null values from the Arrival Time and/or Departure Time. Since the focus of my project is to look at the factors affecting, specifically, the time the flight is scheduled, I chose to eliminate these values.
+The second piece of wrangling that need to be applied was the elimination of null values from the Arrival Time and/or Departure Time. Since the focus of my project is to look at the factors specifically  affecting the time a flight is scheduled, I chose to eliminate these values. 
 
 ####Time
 Format went from AAAA to HH:MM
@@ -28,7 +42,13 @@ The first feature I added to my data set was column with 0 to indicate no delay 
 ####Hour of Departure
 The next feature I added was the hour of departure. To get this, I grabbed the first two characters from the Departure Time column (format == HH:MM). Prior to extracting the hour of depature, I was having issues with plotting a time series graph. However, extracting the hour solved this and led to some interesting results.
 
-##Application of Statistics 
+
+##Approach
+For this study, I will be focusing on which time of day the delay occurred and at which airport/region the delay occurred. I think it will be necessary to consider these two variables together due to environmental issues that affect specific airports (e.g. afternoon thunderstorms in Miami). Time of year will also likely need to be considered to account for weather that only occurs during certain times of the year. In addition to the apparent challenges that weather can pose, I want to see if avoiding certain flight times can improve one's chance of avoiding a flight delay, despite the time of year. After I have completed my modeling for one year of data, I am hoping that delays will be predicted in the second year of data. To predict the probability of flight delays, I will use logistic regression as my model. To predict which factors are significant in predicting delays, I will use linear regression as my model.
+
+
+
+##Application of Statistics
 ####Summary Statistics
 Below are summary statistics of the data when a delay occured. If a delay did not occur on a flight, then it was not included in the summary below. Below the summary statistics is a histogram showing  the distribution of the delay times. Clearly, I am dealing with a left-skewed data distribution.
 <br>
@@ -69,4 +89,13 @@ I wanted to see if the size of airport was correlated to the probablility of a d
 ![Airport size](/Users/rhino/project_proposal/size.png)
 
 ##Limitations
-Each flight was an idenpendent event. No way of know if a delayed flight impacted additional flights.
+Each flight was an idependent event. There is no way of knowing if a delayed flight impacted additional flights. That is, there is no way to tell if a flight was part of a larger itinerary. This information would be useful since there is no way of knowing if a delay of 30 minutes was impactful to a larger itinerary or just an inconvenience.
+
+###Packages Used
+<br>library(readr)
+<br>library(tidyr)
+<br>library(dplyr)
+<br>library(readxl)
+<br>library(lubridate)
+<br>library(chron)
+<br>library(ggplot2)
