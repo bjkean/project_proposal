@@ -9,11 +9,6 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-How do you frame your main question as a machine learning problem? Is it a supervised or unsupervised problem? If it is supervised, is it a regression or a classification?
-What are the main features (also called independent variables or predictors) that you'll use?
-Which machine learning technique will you use?
-How will you evaluate the success of your machine learning technique? What metric will you use?
-
 #Logistic Regression
 The first machine learning technique I looked at was logistic regression. The main goal I was hoping to achieve was to determine whether or not a flight was delayed. Therefor, my dependent variable was a field I created Departure_Delay_BOOL that is a boolean where 0 represents no delay and 1 represents a delay. The independent variables I used to test for a delay were:
 
