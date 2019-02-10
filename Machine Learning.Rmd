@@ -1,0 +1,39 @@
+---
+title: "Machine Learning"
+author: "Ben Kean"
+date: "2/9/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+How do you frame your main question as a machine learning problem? Is it a supervised or unsupervised problem? If it is supervised, is it a regression or a classification?
+What are the main features (also called independent variables or predictors) that you'll use?
+Which machine learning technique will you use?
+How will you evaluate the success of your machine learning technique? What metric will you use?
+
+#Logistic Regression
+The first machine learning technique I looked at was logistic regression. The main goal I was hoping to achieve was to determine whether or not a flight was delayed. Therefor, my dependent variable was a field I created Departure_Delay_BOOL that is a boolean where 0 represents no delay and 1 represents a delay. The independent variables I used to test for a delay were:
+
+**Flight_hour**: the 2-byte hour for the scheduled departure. This was converted to a factor.
+**State**: this is the US State where the departure airport is located.
+**season**: the meteorological season. For example Jun, Jul & Aug are summer Dec, Jan, Feb are winter, etc.
+**Day_of_Week**: the day of the week the flight departed.
+**Taxi_Out**: the amount of time it takes for a airplane to taxi into position for departure
+
+The baseline model, where it was predicted that there were no delays gave an accuracy of around 61%. Based on this, I was hoping to get at least 70% accuracy. However, depsite all the combinations I tried, I was not able to get better than 62%. Or, a 1% increase in performance over the baseline.
+
+Initially, I classified *all* departure delays greater than 0 as a delay. However, this creates two issues in the analysis. The first issue is that not all delays are posing issues and need to be tracked. A delay of 1 minute was being treated the same as a delay of 1 hour. These are two different severity levels and should be treated different. The next issue is that the factors I was test were trying to predict different kinds of delays. Season and to some extent Flight_hour and State are mainly factors to consider for weather delays while Day_of_Week and Taxi_Out are more related to the airlines operational delays or air_system_delays.  After splitting up the delays and identifying attributes seperately, I was able to get overall delay predictions of 62%, however, overall model accuracy was around 50-55%.
+
+#Linear Regression
+The other ML techinique I attempted was linear. I wanted to take another angle and assess arrival delay to see if I would have better results. The following elements are the independent variables that I compared to arrival delay:
+
+
+**ELAPSED_TIME**: the amount of time the flight took enroute + Taxi time
+**DISTANCE**: the length, in miles, of the flight
+
+Both variables I picked turned out to be significant with 3 starts each from the R summary. However, results from this comparison were quite low and only about 5% of the variation is explained by the model.
+
+Prior to completion of this course, I think there are other approaches I can look at to get more accurate models. Also, given the complexity of flight data, along with the multiple, independent factors that can result prediction the desired outcome, I believe that more sophisticated techniques may be needed to get better resuls.
