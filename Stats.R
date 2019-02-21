@@ -1,19 +1,22 @@
-#installing packages
+#loading packages
 library(readr)
+library(ggplot2)
 library(tidyr)
 library(dplyr)
 library(readxl)
 library(lubridate)
 library(chron)
-library(ggplot2)
+library(caTools)
+library(ROCR)
 
 #setting local paths
 flight_path <- "/Users/rhino/downloads/flights.csv"
 airport_path <- "/Users/rhino/downloads/airports.csv"
 airlines_path <- "/Users/rhino/downloads/airlines.csv"
 
-#reading in data
+#reading data from path into Dataframes
 flight_data <- read_csv(flight_path)
+glimpse(flight_data)
 length(flight_data) #31 cols
 nrow(flight_data) #5,819,079 rows
 
@@ -21,7 +24,7 @@ nrow(flight_data) #5,819,079 rows
 airport <- read_csv(airport_path)
 nrow(airport)
 
-#2a purging null values for Departure Delay as these won't help in analysis
+#Purging null values for Departure Delay as these won't help in analysis
 flight_data <- flight_data %>% 
   filter(!is.na(flight_data$DEPARTURE_DELAY))
 
@@ -29,122 +32,170 @@ flight_data <- flight_data %>%
 flight_data <- flight_data %>% 
   filter(!is.na(flight_data$ARRIVAL_DELAY))
 
-#3 purging all airports with numeric values
-airport <- airport %>% rename(DESTINATION_AIRPORT = IATA_CODE)
+#creating the flight time
+dummy = '00'
+flight_data <- flight_data %>% 
+  mutate(DEP_TIME_REAL = chron(times = paste(substr(SCHEDULED_DEPARTURE,1,2),substr(SCHEDULED_DEPARTURE,3,4),dummy,sep=":")))
+
+#converting the hour of the flight to a seperate field.
+flight_data <- flight_data %>% 
+  mutate(Flight_hour =as.numeric(substr(SCHEDULED_DEPARTURE,1,2)))
+
+#setting boolean on delay columns
+flight_data <- flight_data  %>% mutate(DEPARTURE_DELAY_BOOL = case_when(DEPARTURE_DELAY  > 0 ~ 1,TRUE ~ 0))
+flight_data <- flight_data  %>% mutate(ARRIVAL_DELAY_BOOL = case_when(ARRIVAL_DELAY  > 0 ~ 1,TRUE ~ 0))
+flight_data <- flight_data  %>% mutate(AIR_SYSTEM_BOOL = case_when(AIR_SYSTEM_DELAY  > 0 ~ 1,TRUE ~ 0))
+flight_data <- flight_data  %>% mutate(SECURITY_DELAY_BOOL = case_when(SECURITY_DELAY  > 0 ~ 1,TRUE ~ 0))
+flight_data <- flight_data  %>% mutate(AIRLINE_DELAY_BOOL = case_when(AIRLINE_DELAY  > 0 ~ 1,TRUE ~ 0))
+flight_data <- flight_data  %>% mutate(LATE_AIRCRAFT_DELAY_BOOL = case_when(LATE_AIRCRAFT_DELAY  > 0 ~ 1,TRUE ~ 0))
+flight_data <- flight_data  %>% mutate( WEATHER_DELAY_BOOL = case_when(WEATHER_DELAY > 0 ~ 1,TRUE ~ 0))
+
+#Changing the name of column in the airport data to match the one in the flight data
+airport <- airport %>% rename(ORIGIN_AIRPORT = IATA_CODE)
 head(airport)
 nrow(flight_data)
 flight_data <- semi_join(flight_data, airport)
 
-#4 setting aiprots with less than 3650 flights (10 per day)
-airport_cnts <- 
+#getting airport data
+flight_data <- inner_join(flight_data, airport)
+glimpse(flight_data)
+
+#finding the % of delays for each type of delay
+all = sum(flight_data$DEPARTURE_DELAY_BOOL) 
+weather = sum(flight_data$WEATHER_DELAY_BOOL) #3%
+late = sum(flight_data$LATE_AIRCRAFT_DELAY_BOOL) #26%
+airline = sum(flight_data$AIRLINE_DELAY_BOOL) #27%
+security = sum(flight_data$SECURITY_DELAY_BOOL) #<1%
+system = sum(flight_data$AIR_SYSTEM_BOOL) #27%
+
+#creating time_of_day variable
+flight_data <- 
+  flight_data  %>% 
+  mutate(time_of_day = case_when(Flight_hour %in% c(5,6,7,8,9,10) ~ 'morning',
+                                 Flight_hour %in% c(11,12,13,14,15,16) ~ 'afternoon',
+                                 Flight_hour %in% c(17,18,19,20,21,22) ~ 'evening',
+                                 Flight_hour %in% c(23,0,1,2,3,4) ~ 'overnight'))
+
+#creating season varialbe
+flight_data <- 
+  flight_data  %>% 
+  mutate(season = case_when(MONTH %in% c(12,1,2) ~ 'winter',
+                            MONTH %in% c(3,4,5) ~ 'spring',
+                            MONTH %in% c(6,7,8) ~ 'summer',
+                            MONTH %in% c(9,10,11) ~ 'fall'))
+
+
+#setting the seed & training set
+set.seed(37)
+split <- sample.split(flight_data$DEPARTURE_DELAY_BOOL, SplitRatio = 0.25)
+flight_train <- subset(flight_data, split == TRUE)
+flight_test <- subset(flight_data, split ==FALSE)
+
+#baseline predictions
+#predicts that there will be no delays. Accurate 61%
+table(flight_train$DEPARTURE_DELAY_BOOL)
+
+#converting these fields to factors since they are numeric but should not be weighted.
+flight_train <- flight_train %>% mutate(fact_month = as.factor(MONTH))
+flight_train <- flight_train %>% mutate(fact_flight_hour = as.factor(Flight_hour))
+flight_train <- flight_train %>% mutate(fact_day_week = as.factor(DAY_OF_WEEK))
+
+glimpse(flight_train)
+nrow(flight_train)
+
+
+#predicting the delays
+delayLog <- glm(DEPARTURE_DELAY_BOOL ~ season + time_of_day + DAY_OF_WEEK, 
+                family = "binomial", data = flight_train)
+summary(delayLog)
+
+predictTrain = predict(delayLog, type="response") #tells predict to give us probability.
+summary(predictTrain)
+
+tapply(predictTrain, flight_train$DEPARTURE_DELAY_BOOL, mean) 
+
+tab = table(flight_train$DEPARTURE_DELAY_BOOL, predictTrain > 0.30)
+tab
+accurarcy = (tab[1,1]+tab[2,2])/(tab[1,1]+tab[2,2]+tab[1,2]+tab[2,1])
+delay = tab[2,2]/(tab[2,1]+tab[2,2])
+print(paste('accuracy =',accurarcy))
+print(paste('delay accuracy=',delay))
+
+rocrpred <- prediction(predictTrain, flight_train$DEPARTURE_DELAY_BOOL)
+
+rocrperf = performance(rocrpred, "tpr","fpr")
+
+plot(rocrperf, colorize=TRUE, print.cutoffs.at=seq(0,1,0.1), text.adj=c(-0.2, 1.7))
+print('all done')
+
+#linear Regression
+glimpse(flight_train)
+linmod <- lm(ARRIVAL_DELAY ~ ELAPSED_TIME + DISTANCE, data = flight_train)
+summary(linmod)
+
+
+ggplot(flight_train, aes(x = ARRIVAL_DELAY, y = ELAPSED_TIME)) +
+  geom_point(shape = 1, alpha = 0.6)
+
+#inster graph plots here
+
+#creating a table to determine when a delay has occured vs when it has not based on time of day
 flight_data %>% 
-  group_by(ORIGIN_AIRPORT) %>% 
+  group_by(time_of_day) %>%
+  select(ARRIVAL_DELAY_BOOL) %>% 
+  table()
+
+#getting percentages
+742411/(1153514+742411)
+646063/(808775+646063)
+534477/(534477+1284789)
+22695/(22695+38406)
+
+#looking at average delay based on time of day when a delay has occured
+flight_data %>% 
+  group_by(time_of_day, ARRIVAL_DELAY_BOOL) %>% 
+  summarise(cnt = mean(ARRIVAL_DELAY)) #%>% 
+  filter(ARRIVAL_DELAY_BOOL == 1)#%>% View()
+
+#creating a table to determin if there is a best day of the week to travel
+flight_data %>% 
+  group_by(DAY_OF_WEEK, ARRIVAL_DELAY_BOOL) %>%  
+  summarise(n = n()) %>% 
+  mutate(freq = n/sum(n)) %>% 
+  filter(ARRIVAL_DELAY_BOOL==1)
+
+#finding the average delay based on day of the week
+flight_data %>% 
+  group_by(DAY_OF_WEEK, ARRIVAL_DELAY_BOOL) %>%  
+  summarise(n = mean(ARRIVAL_DELAY)) %>% 
+  #mutate(freq = n/sum(n)) %>% 
+  filter(ARRIVAL_DELAY_BOOL==1)
+
+
+#looking at airports to avoid, based on top airports in terms of traffic
+delays <- flight_data %>% 
+  group_by(DESTINATION_AIRPORT, ARRIVAL_DELAY_BOOL) %>% 
   summarise(cnt = n()) %>% 
-  filter(cnt>10000)
+  mutate(avg_delay = cnt/sum(cnt)) %>% 
+  filter(ARRIVAL_DELAY_BOOL==1, cnt>6000)
 
-#5 filter airports that did NOT make the cut above
-flight_data <- semi_join(flight_data, airport_cnts)
-nrow(flight_data) #4,973,276
-
-#Getting 10% sample
-flight_sample <- sample_n(flight_data,as.integer(nrow(flight_data)*0.10))
-nrow(flight_sample) #497,327
-
-#reviewing data setup
-glimpse(flight_sample)
-
-#setting boolean on delay columns
-flight_sample <- 
-flight_sample %>% 
-  mutate(ARRIVAL_BOOL_DELAY = case_when(ARRIVAL_DELAY > 0 ~ 1,
-                                        TRUE ~ 0))
-
-flight_sample <- 
-  flight_sample %>% 
-  mutate(DEPARTURE_BOOL_DELAY = case_when(DEPARTURE_DELAY > 0 ~ 1,
-                                        TRUE ~ 0))
-
-#Percent, by airport, for delays
-flight_sample %>% 
-  group_by(DESTINATION_AIRPORT) %>% 
-  summarise(Percent_Delay = (sum(ARRIVAL_BOOL_DELAY)/n()), cnt=n()) %>% 
-  arrange(desc(Percent_Delay))
-
-#Avg Delay time when BOOL == 1
-flight_sample %>% 
-  group_by(DESTINATION_AIRPORT, ARRIVAL_BOOL_DELAY) %>% 
-  summarise(Average_Delay = (mean(ARRIVAL_DELAY)), cnt=n()) %>% 
-  filter(ARRIVAL_BOOL_DELAY==1) %>%
-  arrange(desc(Average_Delay))
-
-#percent delay by airport ARRIVAL
-flight_sample %>% 
-  #filter(DESTINATION_AIRPORT == "MSP") %>% 
-  #group_by(DESTINATION_AIRPORT) %>% 
-  group_by(Flight_hour) %>% 
-  summarise(Percent_Delay = (sum(ARRIVAL_DELAY>0)/n()), cnt=n()) %>% 
-  View()
-glimpse(flight_sample)
-
-  #percent delay by airport DEPARTURE
-flight_sample %>% 
-    #filter(DESTINATION_AIRPORT == "MSP") %>% 
-    #group_by(DESTINATION_AIRPORT) %>% 
-  group_by(DEPARTURE_BOOL_DELAY) %>% 
-  summarise(Percent_Delay = (sum(DEPARTURE_DELAY>0)/n()), cnt=n())  
+delays %>% 
+  arrange((avg_delay))
 
 
-  
-glimpse(flight_sample)
-#creating the time variable b/c chron needs colon & seconds
-#adding dummy
-dummy = '00'
-flight_sample <- flight_sample %>% 
-  mutate(DEP_TIME_REAL = chron(times = paste(substr(SCHEDULED_DEPARTURE,1,2),substr(SCHEDULED_DEPARTURE,3,4),dummy,sep=":")))
+#reading in carrier data
+AIR_CARRIER <- read_csv(airlines_path)
 
-flight_sample <- flight_sample %>% 
-  mutate(Flight_hour =as.numeric(substr(SCHEDULED_DEPARTURE,1,2)))
+#getting results when a delay occured
+delay_duration <- flight_data %>% 
+  select(AIRLINE, ARRIVAL_DELAY, ARRIVAL_DELAY_BOOL) %>%
+  filter(ARRIVAL_DELAY_BOOL == 1) %>% 
+  group_by(AIRLINE) %>% 
+  summarise(avg=mean(ARRIVAL_DELAY)) %>% 
+  arrange(desc(avg))
 
-glimpse(flight_sample)
+delay_duration <- delay_duration %>% rename(IATA_CODE = AIRLINE)
 
-#Does Size of Airport impact delays? No
-vizSample1 <- flight_sample %>% 
-  group_by(DESTINATION_AIRPORT) %>% 
-  summarise(Percent_Delay = (sum(ARRIVAL_DELAY>0)/n()), cnt=n())
-
-ggplot(vizSample1, aes(x = Percent_Delay, y = cnt)) +
-  geom_point()
-
-#Does Time of day impact delays? Seems like it...
-vizSample2 <- flight_sample %>% 
-  group_by(Flight_hour) %>% 
-  summarise(Percent_Delay = (sum(ARRIVAL_DELAY>0)/n()), cnt=n())
-
-View(vizSample2)
-ggplot(vizSample2, aes(x = Flight_hour, y = Percent_Delay)) +
-  geom_point()
-
-glimpse(vizSample2)
-
-vizSample3 <- flight_sample %>% 
-  group_by(Flight_hour) %>% 
-  filter(Flight_hour>3) %>% 
-  summarise(Percent_Delay = (sum(ARRIVAL_DELAY>0)/n()), cnt=n())
-#delete
-c <- lm(formula=Flight_hour ~ Percent_Delay, data=vizSample3)
-summary(c)
-
-d <- glm(Flight_hour ~ binomial(DEPARTURE_BOOL_DELAY))
-
-
-mean_data <- flight_sample %>% 
-  filter(ARRIVAL_BOOL_DELAY==1)
-
-summary(mean_data$ARRIVAL_DELAY)
-nrow(mean_data)/nrow(flight_sample)
-
-ggplot(mean_data, aes(ARRIVAL_DELAY)) +
-  geom_histogram(binwidth = 75)
-View(mean_data)
-
-sd(mean_data$ARRIVAL_DELAY)
+#joining to get carrier name
+carr_delays_durr <- inner_join(delay_duration, AIR_CARRIER)
+carr_delays_durr %>% select(AIRLINE, avg) %>% View()
